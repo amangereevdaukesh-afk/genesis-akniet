@@ -1,5 +1,5 @@
 import {Account} from './Account';
-import {client,removeCloud,saveCloud} from './cloud';
+import {client,hydrate,prepareOpening,removeCloud,saveCloud} from './cloud';
 import { VisitorGuide } from './VisitorGuide';
 import { readMemories } from './memories';
 import { MemoryEditor, MemoryViewer } from './MemoryUI';
@@ -104,6 +104,14 @@ export default function App({owner}:{owner:string|null}) {
 
     const [door,setDoor]=useState<RoomId|null>(null);
 
+    const [notice,setNotice]=useState('');
+    const ticket=useRef(0);
+    const soundtrack=useRef<HTMLAudioElement|null>(null);
+    const soundBlob=useRef('');
+    const stopStory=useCallback(()=>{
+      ticket.current++;const a=soundtrack.current;if(a){a.pause();a.removeAttribute('src');a.load()}
+      soundtrack.current=null;if(soundBlob.current)URL.revokeObjectURL(soundBlob.current);soundBlob.current='';
+    },[]);
     const viewerTimer=useRef<ReturnType<typeof setTimeout>|null>(null);
 
     const [place, setPlace] = useState<Place>(initialPlace);
@@ -158,15 +166,25 @@ export default function App({owner}:{owner:string|null}) {
 
     const onSettled = useCallback(() => setBusy(false), []);
 
-    const onSelect = useCallback((i:number)=>{if(!loaded||busy)return;setSelected(i);const memory=memories.find(m=>m.room===place&&m.slot===i);if(memory){if(viewerTimer.current)clearTimeout(viewerTimer.current);viewerTimer.current=setTimeout(()=>{setViewer(memory);void setAmbience(false);setSound(false)},reduced?0:1450)}else {if(!owner)sessionStorage.setItem("museum-create",JSON.stringify({room:place,slot:i}));setEditor(i)}},[loaded,busy,memories,place,reduced,owner]);
+    const onSelect = useCallback((i:number)=>{if(!loaded||busy)return;setSelected(i);const memory=memories.find(m=>m.room===place&&m.slot===i);if(memory){
+      stopStory();const request=ticket.current;
+      void setAmbience(false);setSound(false);setNotice('Opening memory�');
+      const audio=memory.audio?URL.createObjectURL(memory.audio):memory.media?.expires&&memory.media.expires>Date.now()?memory.media.audioUrl:undefined;
+      if(audio){if(memory.audio)soundBlob.current=audio;const a=new Audio(audio);soundtrack.current=a;void a.play().catch(()=>{});}
+      Promise.all([prepareOpening(memory),new Promise(resolve=>setTimeout(resolve,reduced?0:1100))]).then(([full])=>{
+        if(ticket.current!==request)return;
+        if(!soundtrack.current&&full.audio){soundBlob.current=URL.createObjectURL(full.audio);soundtrack.current=new Audio(soundBlob.current);void soundtrack.current.play().catch(()=>{});}
+        setNotice('');setViewer(full);
+      }).catch(()=>{if(ticket.current===request){stopStory();setNotice('Could not open this memory. Select the frame to retry.')}});
+    }else {if(!owner)sessionStorage.setItem("museum-create",JSON.stringify({room:place,slot:i}));setEditor(i)}},[loaded,busy,memories,place,reduced,owner,stopStory]);
 
-    useEffect(()=>()=>{if(viewerTimer.current)clearTimeout(viewerTimer.current)},[]);
+    useEffect(()=>()=>{stopStory();if(viewerTimer.current)clearTimeout(viewerTimer.current)},[]);
 
     const onFail = useCallback(() => { setWebgl(false); setReady(true); setBusy(false); }, []);
 
     useEffect(() => { const media = matchMedia('(prefers-reduced-motion: reduce)'); const change = () => setSystemReduced(media.matches); media.addEventListener('change', change); return () => media.removeEventListener('change', change); }, []);
 
-    useEffect(() => { const sync = () => { navTimeline.current?.kill(); gsap.set(veil.current, { opacity: 0 }); setPlace(initialPlace()); setSelected(null); setExploring(false); setBusy(false); }; window.addEventListener('hashchange', sync); return () => window.removeEventListener('hashchange', sync); }, []);
+    useEffect(() => { const sync = () => { stopStory();setViewer(null);setNotice('');navTimeline.current?.kill(); gsap.set(veil.current, { opacity: 0 }); setPlace(initialPlace()); setSelected(null); setExploring(false); setBusy(false); }; window.addEventListener('hashchange', sync); return () => window.removeEventListener('hashchange', sync); }, []);
 
     useEffect(() => () => { navTimeline.current?.kill(); void setAmbience(false); }, []);
 
@@ -192,7 +210,7 @@ export default function App({owner}:{owner:string|null}) {
 
         if(viewerTimer.current)clearTimeout(viewerTimer.current);
 
-        setViewer(null);setEditor(null);setDoor(null);
+        stopStory();setNotice('');setViewer(null);setEditor(null);setDoor(null);
 
         setPanel(null);
 
@@ -227,7 +245,7 @@ export default function App({owner}:{owner:string|null}) {
     const arrival=useCallback(()=>{if(door)navigate(door)},[door,navigate]);
 
     useEffect(()=>{if(!owner||!loaded)return;const pending=sessionStorage.getItem("museum-create");if(!pending)return;sessionStorage.removeItem("museum-create");try{const p=JSON.parse(pending);if(["glow","hush","echo","pulse"].includes(p.room)&&Number.isInteger(p.slot)){setPlace(p.room);history.replaceState(null,"","#"+p.room);setEditor(p.slot)}}catch{}},[owner,loaded]);
-    function saved(memory:Memory){setEditing(undefined);setMemories(old=>[...old.filter(m=>m.id!==memory.id),memory]);setEditor(null);if(place!==memory.room){setPlace(memory.room);history.pushState(null,'','#'+memory.room)}setSelected(memory.slot)}
+    function saved(memory:Memory){setNotice("Saved to your private collection.");setEditing(undefined);setMemories(old=>[...old.filter(m=>m.id!==memory.id),memory]);setEditor(null);if(place!==memory.room){setPlace(memory.room);history.pushState(null,'','#'+memory.room)}setSelected(memory.slot)}
 
     async function toggleSound() { try {
 
@@ -263,7 +281,7 @@ export default function App({owner}:{owner:string|null}) {
 
  <div className="place-label reveal"><span className="location-line"/><span>The main hall</span></div>
 
- <section className="hall-invitation"><h1>Choose a doorway.</h1><p>Four ways to remember. Touch a door to step inside.</p><details><summary>Accessible gallery navigation</summary><nav>{rooms.map(r=><button disabled={busy} key={r.id} onClick={()=>enterDoor(r.id)}>{r.name}</button>)}</nav></details></section>
+ <section className="hall-invitation"><h1>Choose a doorway.</h1><p>Four ways to remember. <span className="pan-instruction">Swipe to look around. </span>Touch a door to step inside.</p><details><summary>Accessible gallery navigation</summary><nav>{rooms.map(r=><button disabled={busy} key={r.id} onClick={()=>enterDoor(r.id)}>{r.name}</button>)}</nav></details></section>
 
  </> : room ? <>
 
@@ -275,23 +293,24 @@ export default function App({owner}:{owner:string|null}) {
 
  </main>
 
- <footer className="museum-footer"><div>{place === 'entrance' ? <span>A space for your becoming.</span> : <button className="text-button" onClick={() => setPanel('collection')}>{memories.length ? `Your collection · ${memories.length}` : 'Your collection awaits'}</button>}</div><div className="footer-end"><button className="text-button guide-link" onClick={()=>setPanel('guide')}>Public demo · Visitor guide</button><span className="example-note">Local to this browser · Not shared</span>{fallback && <span className="example-note">Lightweight architectural study</span>}<button className="sound-button" aria-label={sound ? 'Turn sound off' : 'Turn sound on'} aria-pressed={sound} onClick={toggleSound}>{sound ? <Volume2 size={17}/> : <VolumeX size={17}/>}<span>Sound {sound ? 'on' : 'off'}</span></button></div></footer>
+ <footer className="museum-footer"><div>{place === 'entrance' ? <span>A space for your becoming.</span> : <button className="text-button" onClick={() => setPanel('collection')}>{memories.length ? `Your collection · ${memories.length}` : 'Your collection awaits'}</button>}</div><div className="footer-end"><button className="text-button guide-link" onClick={()=>setPanel('guide')}>Public demo · Visitor guide</button><span className="example-note">{owner?'Private cloud collection':'Local to this browser · Not shared'}</span>{fallback && <span className="example-note">Lightweight architectural study</span>}<button className="sound-button" aria-label={sound ? 'Turn sound off' : 'Turn sound on'} aria-pressed={sound} onClick={toggleSound}>{sound ? <Volume2 size={17}/> : <VolumeX size={17}/>}<span>Sound {sound ? 'on' : 'off'}</span></button></div></footer>
 
  <span className="sr-only" role="status" aria-live="polite">{busy ? 'Moving through the museum' : room ? `${room.name}, ${room.emotion}` : place === 'hall' ? 'You are in the main hall' : 'Museum entrance'}</span>
 
  {panel === 'settings' && <Dialog title="Make yourself at home." onClose={closePanel}><p className="dialog-intro">A few small adjustments for your visit.</p><div className="setting-row"><div><h3>Ambient sound</h3><p>A quiet, original tonal soundscape.</p></div><button role="switch" aria-checked={sound} aria-label="Ambient sound" className={`toggle ${sound ? 'on' : ''}`} onClick={toggleSound}><span /></button></div>{audioError && <p role="alert">{audioError}</p>}<fieldset className="setting-block"><legend>Motion</legend><p>Reduced motion skips camera journeys. Your system preference is always respected.</p><div className="segmented"><button aria-pressed={motion === 'system'} onClick={() => setMotion('system')}>Follow system</button><button aria-pressed={motion === 'reduced'} onClick={() => setMotion('reduced')}>Reduced</button></div></fieldset><fieldset className="setting-block"><legend>Rendering quality</legend><p>Light uses fewer pixels and turns off real-time shadows.</p><div className="segmented"><button aria-pressed={quality === 'high'} onClick={() => setQuality('high')}>Detailed</button><button aria-pressed={quality === 'low'} onClick={() => setQuality('low')}>Light</button></div></fieldset><div className="setting-row"><div><h3>Lightweight view</h3><p>A simple architectural fallback without 3D.</p></div><button role="switch" aria-label="Lightweight view" aria-checked={flat} className={`toggle ${flat ? 'on' : ''}`} onClick={() => setFlat(!flat)}><span /></button></div><p className="dialog-footnote">Preferences apply to this visit.</p></Dialog>}
 
- {panel === 'about' && <Dialog title="Not every day is extraordinary. Every day is yours." onClose={closePanel}><p className="dialog-intro">Museum of Days is a place for the things you want to keep: a feeling, a person, the light on an ordinary afternoon.</p><p>Here, your photographs and words become exhibits. Each finds a place in a gallery shaped by how that day felt.</p><div className="about-emotions">{rooms.map(r => <span key={r.id}>{r.name}<small>{r.emotion.replace('The gallery of ', '')}</small></span>)}</div><p>Choose an empty frame to keep a day. Your memories stay in this browser on this device, ready for your next visit.</p><button className="solid-button" onClick={() => navigate('hall')}>Visit the main hall</button></Dialog>}
+ {panel === 'about' && <Dialog title="Not every day is extraordinary. Every day is yours." onClose={closePanel}><p className="dialog-intro">Museum of Days is a place for the things you want to keep: a feeling, a person, the light on an ordinary afternoon.</p><p>Here, your photographs and words become exhibits. Each finds a place in a gallery shaped by how that day felt.</p><div className="about-emotions">{rooms.map(r => <span key={r.id}>{r.name}<small>{r.emotion.replace('The gallery of ', '')}</small></span>)}</div><p>Choose an empty frame to keep a day. {owner?'Your account keeps your private collection across devices.':'Sign in to save a private memory across devices.'}</p><button className="solid-button" onClick={() => navigate('hall')}>Visit the main hall</button></Dialog>}
 
  {panel==='guide'&&<Dialog title="Your first visit." onClose={closePanel}>{owner?<p>Your collection is saved privately to your account.</p>:<VisitorGuide onChange={async()=>{if(viewerTimer.current)clearTimeout(viewerTimer.current);setViewer(null);setEditor(null);setSelected(null);setMemories(await readMemories())}}/>}</Dialog>}
  {storageError&&<p className="storage-error" role="alert">{storageError}</p>}
 
- {panel==='collection'&&<Dialog title="The days you kept." onClose={closePanel}><p> {owner?'Your private cloud collection.':'Guest memories stay in this browser.'}</p>{owner?<><button disabled={working||!loaded} onClick={()=>void importLocal()}>Import personal memories from this browser</button><button onClick={()=>void client!.auth.signOut()}>Sign out</button></>:<Account/>}{memories.length===0?<p>No memories yet. Step into a gallery and choose an empty frame.</p>:<div className="collection-list">{memories.map(m=><div key={m.id}><button onClick={()=>{setPanel(null);setPlace(m.room);history.pushState(null,'','#'+m.room);setSelected(m.slot)}}><strong>{m.title}<small className="memory-kind">{m.kind==='demo'?'Demo sample':m.kind==='test'?'Test memory':'Personal memory'}</small></strong><span>{m.date} · {m.room}</span></button>{owner&&<><button disabled={working} onClick={()=>{setEditing(m);setPlace(m.room);setPanel(null);setEditor(m.slot)}}>Edit</button><button disabled={working} onClick={async()=>{if(!window.confirm('Delete this private memory and its files?'))return;setWorking(true);try{await removeCloud(m);setMemories(old=>old.filter(x=>x.id!==m.id))}catch{setAccountMessage('Deletion could not be confirmed. Reload to check your collection.')}finally{setWorking(false)}}}>Delete</button></>}</div>)}</div>}<button className="solid-button" onClick={()=>navigate('hall')}>Return to the main hall</button><p role="status">{accountMessage}</p></Dialog>}
+ {panel==='collection'&&<Dialog title="The days you kept." onClose={closePanel}><p> {owner?'Your private cloud collection.':'Guest memories stay in this browser.'}</p>{owner?<><button disabled={working||!loaded} onClick={()=>void importLocal()}>Import personal memories from this browser</button><button onClick={()=>void client!.auth.signOut()}>Sign out</button></>:<Account/>}{memories.length===0?<p>No memories yet. Step into a gallery and choose an empty frame.</p>:<div className="collection-list">{memories.map(m=><div key={m.id}><button onClick={()=>{setPanel(null);setPlace(m.room);history.pushState(null,'','#'+m.room);setSelected(m.slot)}}><strong>{m.title}<small className="memory-kind">{m.kind==='demo'?'Demo sample':m.kind==='test'?'Test memory':'Personal memory'}</small></strong><span>{m.date} · {m.room}</span></button>{owner&&<><button disabled={working} onClick={async()=>{setWorking(true);try{const full=await hydrate(m);setEditing(full);setPlace(m.room);setPanel(null);setEditor(m.slot)}catch{setAccountMessage("Could not load originals. Try Edit again.")}finally{setWorking(false)}}}>Edit</button><button disabled={working} onClick={async()=>{if(!window.confirm('Delete this private memory and its files?'))return;setWorking(true);try{await removeCloud(m,owner);setMemories(old=>old.filter(x=>x.id!==m.id))}catch{setAccountMessage('Deletion could not be confirmed. Reload to check your collection.')}finally{setWorking(false)}}}>Delete</button></>}</div>)}</div>}<button className="solid-button" onClick={()=>navigate('hall')}>Return to the main hall</button><p role="status">{accountMessage}</p></Dialog>}
 
  {editor!==null&&room&&!owner&&<Dialog title="Keep this day." onClose={()=>{sessionStorage.removeItem("museum-create");setEditor(null)}}><Account/></Dialog>}
  {editor!==null&&room&&owner&&<MemoryEditor initial={editing} owner={owner} room={room.id} slot={editor} memories={memories} onClose={()=>{setEditing(undefined);setEditor(null)}} onSaved={saved}/>}
 
- {viewer&&<MemoryViewer memory={viewer} reduced={reduced} onClose={()=>setViewer(null)}/>}
+ {notice&&<p className="museum-notice" role="status">{notice}</p>}
+ {viewer&&<MemoryViewer soundtrack={soundtrack.current} memory={viewer} reduced={reduced} onClose={()=>{stopStory();setViewer(null)}}/>}
 
 
 

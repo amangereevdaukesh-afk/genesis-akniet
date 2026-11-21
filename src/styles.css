@@ -18,3 +18,91 @@
 .demo-intro{font-size:12px!important;line-height:1.6;max-width:340px}.sample-action{margin-left:20px}.memory-kind{display:block;font-size:11px;font-weight:400;margin-top:6px;color:#626655}.viewer-kind{display:block;font-size:11px;margin-top:7px;letter-spacing:.04em}.test-memory-choice{padding:14px;background:#e7e5d7;line-height:1.6}.memory-editor .test-memory-choice input{display:inline-block;width:18px;height:18px;margin:0 10px 0 0;vertical-align:middle}.test-memory-choice small{display:block;margin:7px 0 0 28px}.visitor-guide ol{padding-left:20px;font-size:14px;line-height:1.7}.visitor-guide li{margin:14px 0}.demo-actions{display:flex;align-items:center;gap:22px;flex-wrap:wrap}.demo-actions .text-button{margin-top:26px}.reset-confirm{border-top:1px solid #c4bdac;margin-top:24px;padding-top:18px}.reset-confirm .text-button{padding:16px 0}.visitor-guide [role=status]{margin-top:22px}.guide-link{white-space:nowrap}@media(max-width:600px){.footer-end{max-width:210px}.sample-action{display:block;margin-left:0;margin-top:12px}.demo-intro{max-width:290px;margin-left:auto!important;margin-right:auto!important}.visitor-guide ol{font-size:13px}}
 
 .museum-footer{pointer-events:none}.museum-footer button,.museum-footer a{pointer-events:auto}@media(max-width:600px){.hall-invitation{bottom:155px}.gallery-copy{bottom:165px}}
+
+/* The viewer pairs an archival print with its diary leaf. */
+.living-memory[open]{--paper:#eae1d0;--ink:#302d26;background:var(--paper);color:var(--ink);display:grid;grid-template-columns:minmax(0,1.45fr) minmax(16rem,.85fr);grid-template-rows:minmax(0,1fr) auto;align-items:center;gap:0 clamp(24px,4vw,78px);padding:clamp(64px,8vh,98px) 6vw 0}
+.living-memory.mood-hush{--paper:#dde3d9;--ink:#303d36}
+.living-memory.mood-echo{--paper:#33373d;--ink:#eee5d5}
+.living-memory.mood-pulse{--paper:#e0cec3;--ink:#412f32}
+.living-memory .memory-image{position:relative;inset:auto;grid-area:1/1;width:100%;height:88%;padding:clamp(9px,1.4vw,25px);background:#faf6ec;box-shadow:0 12px 36px #201a1222}
+.living-memory .memory-image img{opacity:1;object-fit:contain}
+.living-memory .memory-story{position:relative;inset:auto;grid-area:1/2;background:none;text-shadow:none;max-width:32rem;border-top:1px solid currentColor;padding:1.3rem 0}
+.living-memory .memory-story time,.living-memory .viewer-kind{font-size:.72rem;letter-spacing:.08em}
+.living-memory .memory-story h1{font:500 clamp(36px,4.7vw,84px)/.98 'Cormorant Garamond',Georgia,serif;margin:1.45rem 0}
+.living-memory .memory-story p{font:400 clamp(17px,1.4vw,23px)/1.52 'Cormorant Garamond',Georgia,serif;max-height:32vh}
+.living-memory .viewer-controls{position:relative;inset:auto;grid-area:2/1/3/-1;justify-content:flex-start;color:var(--ink);background:var(--paper);border-top:1px solid #95897688;padding:14px 0;max-height:25vh;overflow:auto}
+.living-memory .viewer-controls button,.living-memory .viewer-controls a,.living-memory .viewer-close{color:var(--ink);background:transparent;border:1px solid #93867577;padding:8px 12px}
+.living-memory .viewer-close{right:6vw;top:12px}
+.companion-print{pointer-events:none;position:absolute;left:4.5vw;bottom:15%;width:clamp(85px,13vw,200px);aspect-ratio:4/3;transform:rotate(-5deg);border:6px solid #faf6ec;margin:0;box-shadow:0 4px 14px #211d193b}
+.companion-print img{width:100%;height:100%;object-fit:cover}
+.mood-pulse .companion-print{transform:rotate(4deg)}
+.gallery-copy h1{font-size:clamp(38px,5.5vw,84px)}
+@media(max-width:700px){
+ .living-memory[open]{grid-template-columns:1fr;grid-template-rows:minmax(150px,1.4fr) minmax(90px,.85fr) auto;padding:58px 6vw 0;gap:12px;overflow-y:auto}
+ .living-memory .memory-image{grid-area:1/1;height:100%;padding:8px}
+ .living-memory .memory-story{grid-area:2/1;padding:.5rem 0;overflow:auto;align-self:stretch}
+ .living-memory .memory-story h1{font-size:clamp(27px,8vw,40px);margin:.4rem 0}
+ .living-memory .memory-story p{font-size:17px;max-height:none;margin:.35rem 0}
+ .living-memory .viewer-controls{grid-area:3/1;padding:8px 0;gap:4px}
+ .living-memory .viewer-controls button,.living-memory .viewer-controls a{padding:7px;font-size:12px}
+ .companion-print{grid-area:1/1;position:relative;left:auto;bottom:auto;justify-self:end;align-self:end;width:24%;margin-right:1%;border-width:3px}
+}
+.pan-instruction{display:none}
+@media(max-aspect-ratio: 85/100){.pan-instruction{display:inline}.museum[data-place="hall"] canvas{touch-action:none}}
+.living-memory[open]{background:linear-gradient(110deg,color-mix(in srgb,var(--memory-color) 15%,var(--paper)),var(--paper) 65%)}
+.living-memory.layout-folio .memory-image{width:82%;justify-self:center}
+.living-memory.layout-panorama .memory-image{height:68%;align-self:center}
+.living-memory.layout-pair .companion-print{width:clamp(115px,17vw,250px)}
+.living-memory.layout-sequence .companion-print{transform:rotate(-3deg);left:6.8vw}
+.living-memory.finish-vellum .memory-story{border-top-style:double;border-top-width:3px}
+.living-memory.animated .memory-image img{animation-name:var(--photo-motion);animation-duration:var(--duration)}
+.living-memory.animated .memory-story p,.living-memory.animated .memory-image{animation-duration:var(--arrival)}
+.print-index{display:flex;gap:.5rem;flex-wrap:wrap}.print-index button{color:inherit;background:transparent;border:0;border-bottom:3px solid;padding:.5rem;font:inherit;opacity:.65}.print-index button[aria-current]{opacity:1;font-weight:bold}
+@media(max-width:700px){.living-memory.layout-folio .memory-image,.living-memory.layout-panorama .memory-image{width:100%;height:100%}.living-memory .companion-print{max-width:28%}.living-memory.layout-sequence .companion-print{left:0}}
+/* Keep the gallery inscription below the displayed print. */
+.gallery-copy{left:3.3vw;right:3.3vw;bottom:78px;display:flex;align-items:baseline;gap:1.25rem;flex-wrap:wrap;padding:12px 18px;background:linear-gradient(90deg,#242820e8,#242820c9);border-top:1px solid #f3e7c878;color:#f8f1e4}
+.gallery-copy h1,.gallery-copy .gallery-line,.gallery-copy .emotion-name{margin:0}.gallery-copy h1{font-size:clamp(32px,3.3vw,54px)}.gallery-copy .gallery-line{flex:1;font-size:clamp(17px,1.6vw,24px)}.gallery-copy .art-button{margin:0}
+@media(max-width:700px){.gallery-copy{bottom:92px;gap:.3rem .8rem;padding:9px 12px;align-items:center}.gallery-copy h1{font-size:32px}.gallery-copy .gallery-line{display:none}.gallery-copy .art-button{font-size:12px;padding:6px 0}.gallery-copy .emotion-name{flex:1}}
+.living-memory .memory-image{background:var(--mount-paper,#faf6ec)}
+@media(max-aspect-ratio:85/100){.museum canvas{touch-action:none}}
+.admission{position:fixed;inset:0;overflow:auto;display:grid;grid-template-columns:1fr minmax(290px,.75fr);align-items:center;gap:8vw;padding:7vw;color:#34382e;background:radial-gradient(ellipse at 14% 24%,#faf4e6,#e5daca 75%);font-family:"DM Sans",sans-serif}
+.admission-cover{border-left:2px solid #ab8956;padding-left:4vw}.admission-cover h1{font:500 clamp(66px,10vw,165px)/.85 "Cormorant Garamond",Georgia,serif;margin:28px 0}.admission-cover p{font:italic 24px Georgia,serif}.admission-form{max-width:27rem;width:100%;padding:2rem 0}.account-card h2{font:500 36px/1 "Cormorant Garamond",Georgia,serif}.account-tabs{display:flex;gap:18px;margin:1rem 0}.account-tabs button,.demo-entry{background:transparent;color:inherit;padding:8px 0}.account-tabs [aria-pressed=true],.demo-entry{text-decoration:underline;text-underline-offset:4px}.account-card form,.account-card label{display:grid;gap:8px}.account-card form{gap:14px}.account-card input{border:1px solid #9d9684;background:#fffaf0;border-radius:2px;padding:11px;color:#2d332a}.google-entry{width:100%;display:flex;align-items:center;justify-content:center;gap:12px;background:#fffdf7;color:#302f29;border:1px solid #a99e88;padding:11px}.account-rule{text-align:center;border-bottom:1px solid #bdb19b;margin:8px 0 14px;font-size:.7rem}.account-card [role=status]:empty{display:none}
+@media(max-width:700px){.admission{display:block;padding:30px 7vw}.admission-cover h1{font-size:54px;margin:12px 0}.admission-cover h1 br{display:none}.admission-cover h1 br:after{content:' '}.admission-cover p{font-size:18px}.admission-cover img{width:32px;height:32px}.admission-form{margin:auto;padding:1rem 0}}
+.museum-notice{position:fixed;z-index:8;top:80px;left:50%;transform:translateX(-50%);padding:9px 16px;background:#292e26;color:#f8f2e4;pointer-events:none}
+.living-memory .memory-image{isolation:isolate}.living-memory .memory-image:before{content:"";position:absolute;inset:0;z-index:-1;background-image:var(--photo-layer);background-size:cover;background-position:center;filter:blur(20px);opacity:.27}
+.living-memory.animated .memory-image:before,.living-memory.animated .companion-print{animation:print-depth var(--duration) ease-in-out both;animation-play-state:paused}
+.living-memory.playing .memory-image:before,.living-memory.playing .companion-print{animation-play-state:running}
+@keyframes print-depth{from{transform:translate(-2%,2%) scale(1.04)}to{transform:translate(3%,-2%) scale(1.12)}}
+.living-memory.mood-glow .memory-image:after,.living-memory.mood-hush .memory-image:after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(110deg,transparent 30%,#ffe0a52b 56%,transparent 75%);background-size:200% 100%}
+.living-memory.animated.playing .memory-image:after{animation:passing-light var(--duration) ease-in-out both}
+@keyframes passing-light{from{background-position:100% 0}to{background-position:0 0}}
+.living-memory.layout-sequence .print-index{border-top:1px solid currentColor;padding-top:.7rem}
+.living-memory .memory-image video{width:100%;height:100%;object-fit:contain}
+.living-memory.layout-panorama .memory-story{align-self:end;margin-bottom:4vh}
+.living-memory.layout-sequence .memory-image{border-bottom:clamp(12px,2.5vw,36px) solid var(--mount-paper)}
+@media(min-width:701px){.living-memory.layout-pair .companion-print{width:19vw;left:34vw;bottom:16%;transform:rotate(3deg)}.living-memory.layout-folio .memory-story{border-left:1px solid var(--memory-color);border-top:0;padding-left:2rem}}
+.photo-previews figcaption{font:500 12px 'DM Sans',sans-serif;margin-top:4px}.photo-previews figure button{display:block;padding:5px 0;text-decoration:underline;text-underline-offset:3px}
+.auth-welcome{position:fixed;top:1rem;left:50%;transform:translateX(-50%);z-index:1000;background:#eee7d6;color:#302e26;padding:.65rem 1rem;box-shadow:0 3px 16px #0002}.auth-welcome button{margin-left:.5rem}.account-card form [role=status]:empty{display:none}.account-card form [role=status]{margin:.65rem 0;line-height:1.45}
+
+
+/* Account verification: a single accessible OTP input supports mobile autofill and paste. */
+.password-entry{position:relative;display:block}
+.account-card .password-entry input{width:100%;padding-right:48px}
+.account-card .password-entry .password-reveal{position:absolute;inset:0 0 0 auto;width:44px;display:flex;align-items:center;justify-content:center;color:#575b4b;background:transparent;border:0;opacity:1}
+.account-card .password-reveal:hover{background:#ede4d3}
+.account-card .password-reveal:focus-visible{outline:2px solid #a18043;outline-offset:2px}
+.verification-card{padding:12px 0}
+.verification-icon{display:flex;align-items:center;justify-content:center;width:48px;height:48px;color:#78643c;border:1px solid #a99b7d;border-radius:50%;margin-bottom:24px}
+.verification-kicker{font:600 10px/1.4 "DM Sans",sans-serif;letter-spacing:.22em;color:#8a7453;margin:0 0 14px}
+.verification-card h2{font-size:clamp(34px,4vw,46px);margin:0 0 16px}
+.verification-description{font:15px/1.7 "DM Sans",sans-serif;color:#535347;margin-bottom:24px}
+.verification-description strong{font-weight:600;overflow-wrap:anywhere;color:#33362f}
+.verification-card form{gap:12px}
+.account-card input.verification-code{display:block;width:100%;min-height:68px;padding:12px 4px;border:1px solid #a99b7d;border-radius:3px;background:#fffaf0;text-align:center;font:500 clamp(26px,6vw,38px)/1.2 "DM Sans",sans-serif;letter-spacing:.34em;font-variant-numeric:tabular-nums;caret-color:#987d4c}
+.account-card input.verification-code::placeholder{color:#c8bcaa}
+.account-card input.verification-code:focus-visible{outline:2px solid #9b8151;outline-offset:3px}
+.verification-help{font:12px/1.5 "DM Sans",sans-serif;color:#6b685c;margin:0 0 4px}
+.verification-actions{display:flex;flex-wrap:wrap;gap:12px 20px;margin:20px 0 4px}
+.verification-actions button{font:13px/1.4 "DM Sans",sans-serif;color:#6d5b3d;text-decoration:underline;text-underline-offset:4px;padding:4px 0}
+.verification-actions button:hover:not(:disabled){color:#302c24}
+@media(max-width:700px){.verification-card{padding:6px 0}.account-card input.verification-code{min-height:64px;letter-spacing:.25em}.verification-actions{gap:10px 16px}}

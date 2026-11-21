@@ -1,5 +1,6 @@
 import type { Memory } from './memories';
 import { interpret } from './memories';
+import { studyPhotos } from './artDirection';
 import type { RoomId } from './data';
 
 // Original illustrated landscapes, generated locally; no external image service or visitor data.
@@ -22,11 +23,27 @@ async function landscape(room: RoomId, variation: number): Promise<Blob> {
 }
 
 function sampleAudio(): Blob {
-  const rate=16000, seconds=6, n=rate*seconds, buffer=new ArrayBuffer(44+n*2), view=new DataView(buffer);
+  const rate=16000, seconds=20.4, n=rate*seconds, buffer=new ArrayBuffer(44+n*2), view=new DataView(buffer);
   const text=(offset:number,value:string)=>[...value].forEach((char,i)=>view.setUint8(offset+i,char.charCodeAt(0)));
   text(0,'RIFF');view.setUint32(4,36+n*2,true);text(8,'WAVE');text(12,'fmt ');view.setUint32(16,16,true);view.setUint16(20,1,true);view.setUint16(22,1,true);view.setUint32(24,rate,true);view.setUint32(28,rate*2,true);view.setUint16(32,2,true);view.setUint16(34,16,true);text(36,'data');view.setUint32(40,n*2,true);
-  for(let i=0;i<n;i++){const t=i/rate,envelope=Math.min(1,t,seconds-t);const sample=(Math.sin(t*220*Math.PI*2)+Math.sin(t*330*Math.PI*2))*.09*envelope;view.setInt16(44+i*2,sample*32767,true)}
+  for(let i=0;i<n;i++){const t=i/rate,phrase=Math.min(2,Math.floor(t/6.8)),beat=Math.floor(t/1.7)%4,age=t%1.7;
+    const pitch=[[62,69,66,64],[59,66,69,73],[67,71,69,62]][phrase][beat];
+    const w=2*Math.PI*440*2**((pitch-69)/12)*age;
+    const key=Math.min(1,age/.018)*Math.exp(-2.3*age)*(Math.sin(w)+.26*Math.sin(2*w)+.08*Math.sin(3*w));
+    const root=2*Math.PI*[146.83,123.47,98][phrase]*t;
+    const bed=Math.sin(Math.PI*(t%6.8)/6.8)**2*(Math.sin(root)+.36*Math.sin(root*1.5));
+    const sample=(.22*key+.075*bed)*Math.min(1,t*10,(seconds-t)*1.8);view.setInt16(44+i*2,sample*32767,true)}
   return new Blob([buffer],{type:'audio/wav'});
+}
+
+export async function lakeMemory(): Promise<Memory> {
+ const diary="From the quay, the mountains looked close enough to touch. Around the bend we stopped speaking and watched the boat leave its little seam of white. By evening I could still feel the lake moving under my feet.";
+ const photos=await Promise.all(['07290','07231','07278'].map(async id=>{
+  const response=await fetch('/lucerne/'+id+'.jpg');
+  if(!response.ok)throw Error('The lake photographs could not be loaded.');
+  return response.blob();
+ }));
+ return {id:'museum-demo-v1-glow',kind:'demo',demoEdition:2,room:'glow',slot:0,date:'1895-06-14',title:'Where the lake held light',diary,photos,audio:sampleAudio(),musicUrl:'',visual:interpret(diary,'glow',await studyPhotos(photos),'steady',true,'1895-06-14'),createdAt:'2026-06-14T12:00:00.000Z'};
 }
 
 export async function sampleMemories():Promise<Memory[]> {
@@ -37,5 +54,5 @@ export async function sampleMemories():Promise<Memory[]> {
     ['pulse','Before the first step','My heart was racing. Across the valley, the light was changing. I felt ready to begin something new.'],
   ];
   const audio=sampleAudio();
-  return Promise.all(stories.map(async([room,title,diary])=>({id:`museum-demo-v1-${room}`,kind:'demo' as const,room,slot:0,date:'2026-06-14',title,diary,photos:await Promise.all([landscape(room,0),landscape(room,1),landscape(room,2)]),audio,musicUrl:'',visual:interpret(diary,room),createdAt:'2026-06-14T12:00:00.000Z'})));
+  return Promise.all(stories.map(async([room,title,diary])=>room==='glow'?lakeMemory():({id:`museum-demo-v1-${room}`,kind:'demo' as const,room,slot:0,date:'2026-06-14',title,diary,photos:await Promise.all([landscape(room,0),landscape(room,1),landscape(room,2)]),audio,musicUrl:'',visual:interpret(diary,room),createdAt:'2026-06-14T12:00:00.000Z'})));
 }

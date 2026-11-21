@@ -1,3 +1,3 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-export default defineConfig({plugins:[react()],base:'./',build:{rollupOptions:{output:{manualChunks:{'three-engine':['three','@react-three/fiber'],'motion':['gsap','@gsap/react']}}}}});
+export default defineConfig({plugins:[react()],base:'./'});
